@@ -1,0 +1,65 @@
+import torch
+import torch.nn as nn
+import numpy as np
+import pandas as pd
+
+e = torch.randn(4,1)  #define e (paramters)
+W = torch.randn(50, 4, 4) #define W, tensor, 50 layers of 4x4 matrices
+W2 = torch.randn(50, 4, 4) #define W2
+V = torch.randn(50,8)  #define V
+b = torch.randn(50, 1)  #define b
+A = torch.randn(50, 1) #random tensor for bilinear_one
+F = torch.randn(50, 1) #random tensor for bilinear_two 
+
+def bilinear_one(B, e):   #eTW1e
+  et = torch.transpose(e,1,0)   #transpose e from column to row
+  return torch.mm(et,torch.mm(B, e))  #matrix multiplication, W*e, then *et
+  
+def bilinear_two(G, e):   #eTW2(e^2)
+  et = torch.transpose(e,1,0) #transpose
+  esq = torch.mul(e, e)  #squares e
+  return torch.mm(et,torch.mm(G, esq))  #matrix multiplication
+  
+def bilinear_three(e, V):    #V[e, e^2]  
+  esq = torch.mul(e, e)   #squares e
+  ecat = torch.cat((e, esq))   #concatenates e and e^2 (esq)
+  return torch.mm(V, ecat)   #matrix multiplication V and ecat
+  
+L = bilinear_three(e, V)
+print(L.shape)
+
+for k in range (0, 50): 
+  # index = torch.tensor([k]) #index for layers of W
+  # B = torch.index_select(W, 0, index)  #gives you a layer of W
+  # C = torch.squeeze(B) # from 1x4x4 -> 4x4
+  B = W[k, :, :]
+  D = print(bilinear_one(B, e)) # gives a 1x1 tensor using layer of this loop
+  A[k, 0] = bilinear_one(B, e)  #puts values together -> 50x1 tensor
+print(A)
+print(A.shape)
+  
+for i in range (0, 50): 
+  # index = torch.tensor([i]) #index for layers of W2
+  # G = torch.index_select(W2, 0, index)  #gives you a layer of W2
+  # H = torch.squeeze(G) # from 1x4x4 -> 4x4
+  G = W2[i, :, :]
+  J = print(bilinear_two(G, e)) # gives a 1x1 tensor using layer of this loop
+  F[i, 0] = bilinear_two(G, e)  #puts values together -> 50x1 tensor
+print(F) 
+print(F.shape)
+
+Q = A + F + L + b #adds all four 50x1 tensors -> output
+print(Q)
+print(Q.shape)
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+import pandas as pd
+
+!gdown --id 1Qu35-_q61nGPDz0BzwKku27VIp7q1HbZ
+
+df = pd.read_csv("parameters.csv", header=None)
+
+df.head()
+
